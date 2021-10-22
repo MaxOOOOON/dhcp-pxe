@@ -36,10 +36,10 @@
 Скрины выполнения:  
 
 Процесс установки минимальной сборки сервера centos 8       
-![]()  
+![](https://github.com/MaxOOOOON/dhcp-pxe/blob/main/pictures/Screenshot_20211022_145858.png)  
 
 Установка успешно завершена     
-![]()  
+![](https://github.com/MaxOOOOON/dhcp-pxe/blob/main/pictures/Screenshot_20211022_150826.png)  
 
 
 
