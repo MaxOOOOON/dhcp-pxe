@@ -1,0 +1,128 @@
+---
+
+- name: Configure pxeserver
+  hosts: pxeserver
+  become: true
+  
+  tasks: 
+  - name: Install software
+    yum:
+     name: "{{ item }}"
+     state: present
+    loop: 
+     - epel-release
+     - dhcp-server
+     - tftp-server
+     - nginx
+     - syslinux-tftpboot.noarch
+  
+
+  - name: Copy dhcpd config
+    copy:
+      src: files/dhcpd.conf
+      dest: /etc/dhcp/dhcpd.conf
+
+  - name: Enable a dhcpd
+    systemd:
+      name: dhcpd
+      state: started
+      enabled: yes
+
+  - name: Enable a tftp
+    systemd:
+      name: tftp
+      state: started
+      enabled: yes
+
+  - name: Mkdir needed directory
+    file: 
+      path: "{{ item }}"
+      state: directory
+    loop:
+      - /var/lib/tftpboot/pxelinux
+      - /var/lib/tftpboot/pxelinux/pxelinux.cfg
+      - /mnt/centos8-install
+      - /var/lib/tftpboot/pxelinux/images/CentOS-8.4
+
+  - name: Copy pxelinux config
+    copy:
+      src: files/default
+      dest: /var/lib/tftpboot/pxelinux/pxelinux.cfg/default
+
+
+  - name: Copy pxelinux config
+    copy:
+      src: "{{ item }}"
+      dest: /var/lib/tftpboot/pxelinux/
+      remote_src: true
+    loop:
+      - /tftpboot/pxelinux.0
+      - /tftpboot/libutil.c32
+      - /tftpboot/menu.c32
+      - /tftpboot/libmenu.c32
+      - /tftpboot/ldlinux.c32
+      - /tftpboot/vesamenu.c32
+    
+ 
+  - name: Download files
+    get_url:
+      url: "{{ item }}"
+      dest: /home/vagrant
+    loop:
+      - http://ftp.mgts.by/pub/CentOS/8.4.2105/BaseOS/x86_64/os/images/pxeboot/initrd.img
+      - http://ftp.mgts.by/pub/CentOS/8.4.2105/BaseOS/x86_64/os/images/pxeboot/vmlinuz
+      - http://ftp.mgts.by/pub/CentOS/8.4.2105/BaseOS/x86_64/os/images/boot.iso
+
+  - name: Copy initrd and vmlinuz
+    copy:
+      src: "{{ item }}"
+      dest: /var/lib/tftpboot/pxelinux/images/CentOS-8.4/
+      remote_src: true
+    loop:
+      - /home/vagrant/vmlinuz
+      - /home/vagrant/initrd.img
+
+  - name: Mount DVD read-only
+    mount:
+      path: /mnt/centos8-install
+      src: /home/vagrant/boot.iso
+      fstype: iso9660
+      opts: ro,noauto
+      state: mounted
+
+  - name: Copy ks.cfg 
+    copy:
+      src: files/ks.cfg
+      dest: /usr/share/nginx/ks.cfg
+
+  - name: Copy default.conf 
+    copy:
+      src: files/default.conf
+      dest: /etc/nginx/conf.d/default.conf
+
+
+  - name: Copy default.conf 
+    copy:
+      src: /mnt/centos8-install/
+      dest: /usr/share/nginx/
+      remote_src: true
+
+
+  - name: Enable nginx service
+    systemd:
+      name: nginx
+      state: started
+      enabled: yes
+
+
+  - name:  Enable tftp firewalld
+    firewalld:
+      service: tftp
+      permanent: yes
+      state: enabled
+
+  - name:  Enable nginx firewalld
+    firewalld:
+      port: 80/tcp
+      permanent: yes
+      state: enabled

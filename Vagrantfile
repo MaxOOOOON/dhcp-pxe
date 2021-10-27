@@ -19,10 +19,17 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
     end
   
+
+    server.vm.provision :ansible do |ansible|
+      ansible.playbook = "./playbook.yml"
+      ansible.inventory_path = "./inventory.yml"
+      # ansible.verbose = true
+    end
+
     # ENABLE to setup PXE
-    server.vm.provision "shell",
-      name: "Setup PXE server",
-      path: "setup_pxe.sh"
+    # server.vm.provision "shell",
+    #   name: "Setup PXE server",
+    #   path: "setup_pxe.sh"
     end
   
   
@@ -48,4 +55,6 @@ Vagrant.configure("2") do |config|
       end
     end
   
+    
+
   end
